@@ -2,6 +2,14 @@
 
 #![allow(unused_macros)]
 
+macro_rules! register_Wdt_driver {
+    ($driver_type:ty, $device_type:ty) => {
+        /// The unified type of the NIC devices.
+        #[cfg(not(feature = "dyn"))]
+        pub type AxWdtDevice = $device_type;
+    };
+}
+
 macro_rules! register_net_driver {
     ($driver_type:ty, $device_type:ty) => {
         /// The unified type of the NIC devices.
@@ -69,5 +77,7 @@ macro_rules! for_each_drivers {
             type $drv_type = crate::drivers::FXmacDriver;
             $code
         }
+        type $drv_type = crate::i6300esb::I6300esb;
+        $code
     }};
 }

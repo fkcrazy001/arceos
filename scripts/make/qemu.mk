@@ -38,7 +38,8 @@ qemu_args-riscv64 := \
 qemu_args-aarch64 := \
   -cpu cortex-a72 \
   -machine $(machine) \
-  -kernel $(FINAL_IMG)
+  -kernel $(FINAL_IMG) \
+  --device i6300esb
 
 qemu_args-loongarch64 := \
   -machine $(machine) \

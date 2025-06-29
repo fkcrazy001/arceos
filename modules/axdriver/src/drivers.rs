@@ -2,7 +2,7 @@
 
 #![allow(unused_imports, dead_code)]
 
-use crate::AxDeviceEnum;
+use crate::{AxDeviceEnum, i6300esb::I6300esb};
 use axdriver_base::DeviceType;
 
 #[cfg(feature = "virtio")]
@@ -50,6 +50,8 @@ register_display_driver!(
     <virtio::VirtIoGpu as VirtIoDevMeta>::Driver,
     <virtio::VirtIoGpu as VirtIoDevMeta>::Device
 );
+
+register_Wdt_driver!(I6300esb, I6300esb);
 
 cfg_if::cfg_if! {
     if #[cfg(block_dev = "ramdisk")] {

@@ -70,6 +70,7 @@ mod macros;
 mod bus;
 mod drivers;
 mod dummy;
+mod i6300esb;
 mod structs;
 
 #[cfg(feature = "virtio")]
@@ -79,6 +80,8 @@ mod virtio;
 mod ixgbe;
 
 pub mod prelude;
+
+use crate::drivers::AxWdtDevice;
 
 #[allow(unused_imports)]
 use self::prelude::*;
@@ -103,6 +106,7 @@ pub struct AllDevices {
     /// All graphics device drivers.
     #[cfg(feature = "display")]
     pub display: AxDeviceContainer<AxDisplayDevice>,
+    pub misc: AxDeviceContainer<AxWdtDevice>,
 }
 
 impl AllDevices {
@@ -143,6 +147,7 @@ impl AllDevices {
             AxDeviceEnum::Block(dev) => self.block.push(dev),
             #[cfg(feature = "display")]
             AxDeviceEnum::Display(dev) => self.display.push(dev),
+            AxDeviceEnum::Wdt(dev) => self.misc.push(dev),
         }
     }
 }
@@ -180,5 +185,10 @@ pub fn init_drivers() -> AllDevices {
         }
     }
 
+    debug!("number of misc devices: {}", all_devs.misc.len());
+    for (i, d) in all_devs.misc.iter().enumerate() {
+        assert_eq!(d.device_type(), DeviceType::Char);
+        debug!("  misc device {}: {:?}", i, d.device_name());
+    }
     all_devs
 }

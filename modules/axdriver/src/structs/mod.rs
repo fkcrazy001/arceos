@@ -6,6 +6,8 @@ use axdriver_base::{BaseDriverOps, DeviceType};
 
 pub use imp::*;
 
+use crate::drivers::AxWdtDevice;
+
 /// A unified enum that represents different categories of devices.
 #[allow(clippy::large_enum_variant)]
 pub enum AxDeviceEnum {
@@ -18,6 +20,7 @@ pub enum AxDeviceEnum {
     /// Graphic display device.
     #[cfg(feature = "display")]
     Display(AxDisplayDevice),
+    Wdt(AxWdtDevice),
 }
 
 impl BaseDriverOps for AxDeviceEnum {
@@ -31,6 +34,7 @@ impl BaseDriverOps for AxDeviceEnum {
             Self::Block(_) => DeviceType::Block,
             #[cfg(feature = "display")]
             Self::Display(_) => DeviceType::Display,
+            Self::Wdt(_) => DeviceType::Char,
             _ => unreachable!(),
         }
     }
@@ -45,6 +49,7 @@ impl BaseDriverOps for AxDeviceEnum {
             Self::Block(dev) => dev.device_name(),
             #[cfg(feature = "display")]
             Self::Display(dev) => dev.device_name(),
+            Self::Wdt(dev) => dev.device_name(),
             _ => unreachable!(),
         }
     }
