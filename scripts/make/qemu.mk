@@ -39,7 +39,7 @@ qemu_args-aarch64 := \
   -cpu cortex-a72 \
   -machine $(machine) \
   -kernel $(FINAL_IMG) \
-  --device i6300esb
+  --device i6300esb -watchdog-action reset
 
 qemu_args-loongarch64 := \
   -machine $(machine) \

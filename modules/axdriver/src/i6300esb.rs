@@ -1,4 +1,7 @@
-use core::ptr::{read_volatile, write_volatile};
+use core::{
+    ptr::{read_volatile, write_volatile},
+    time,
+};
 
 use axdriver_base::BaseDriverOps;
 use axdriver_pci::{Command, DeviceFunction, DeviceFunctionInfo, PciRoot};
@@ -16,7 +19,7 @@ pub struct I6300esb {
 
 impl BaseDriverOps for I6300esb {
     fn device_name(&self) -> &str {
-        "i6400esb"
+        "i6300esb"
     }
     fn device_type(&self) -> axdriver_base::DeviceType {
         axdriver_base::DeviceType::Char
@@ -26,6 +29,7 @@ impl BaseDriverOps for I6300esb {
 use axhal::mem::phys_to_virt;
 
 impl DriverProbe for I6300esb {
+    #[cfg(bus = "pci")]
     fn probe_pci(
         root: &mut PciRoot,
         bdf: DeviceFunction,
@@ -34,6 +38,7 @@ impl DriverProbe for I6300esb {
         // axdriver_net
         if dev_info.vendor_id == 0x8086 && dev_info.device_id == 0x25ab {
             info!("{}", bdf);
+            info!("{:?}", root);
             match root.bar_info(bdf, 0).unwrap() {
                 axdriver_pci::BarInfo::Memory {
                     address,
@@ -64,9 +69,7 @@ impl DriverProbe for I6300esb {
                     let data = root.config_read_word(bdf, 0x60);
                     info!("wcr  = {data}");
 
-                    let data = root.config_read_word(bdf, 0xf8);
-                    info!("mid  = {data:x}");
-                    root.config_write_word(bdf, 0x60, 0x00);
+                    // root.config_write_word(bdf, 0x60, 0x00);
 
                     return Some(AxDeviceEnum::Wdt(dev));
                 }
@@ -83,9 +86,10 @@ impl DriverProbe for I6300esb {
 pub fn set_up_watch_dog(dev: &I6300esb) {
     let va = dev.base_va as *mut u32;
     let unlock_reg = move || unsafe {
-        // info!("va={:?}", va.add(3));
-        write_volatile(va.add(3), 0x80);
-        write_volatile(va.add(3), 0x86);
+        let wa = va.add(3) as *mut u16;
+        info!("va={:?}", va.add(3));
+        write_volatile(wa, 0x80);
+        write_volatile(wa, 0x86);
     };
     info!("va={:?}", va);
     unsafe {
@@ -98,12 +102,15 @@ pub fn set_up_watch_dog(dev: &I6300esb) {
         // pre load value 2
 
         unlock_reg();
-        write_volatile(va, 100);
+        write_volatile(va.add(3) as *mut u16, 3 << 8);
+
         unlock_reg();
-        write_volatile(va.add(1), 100);
+        write_volatile(va, 1);
+        unlock_reg();
+        write_volatile(va.add(1), 1);
         // reload
         unlock_reg();
-        write_volatile(va.add(3), 1 << 8);
+        write_volatile(va.add(3) as *mut u16, 1 << 8);
         // pre load value 1
         info!("p1 {}", read_volatile(va));
         info!("p2 {:x}", read_volatile(va.add(1)));
@@ -118,5 +125,6 @@ pub fn set_up_watch_dog(dev: &I6300esb) {
     axhal::irq::register_handler(43, timeout);
     axhal::irq::register_handler(42, timeout);
     axhal::irq::register_handler(10, timeout);
+    axhal::irq::register_handler(0x3c, timeout);
     debug!("done set watch dog");
 }
